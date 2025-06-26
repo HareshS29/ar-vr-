@@ -70,9 +70,6 @@
             <!--
                 IMPORTANT: This is a GENERIC MP4 from w3schools.com for testing basic functionality.
                 It is NOT a 360-degree video.
-                If you upload your video to GitHub repo, you can get its "Raw" URL, but it WILL LIKELY
-                NOT WORK for WebGL (A-Frame) due to missing CORS headers from GitHub's raw content server.
-
                 For an actual immersive 360 experience, you MUST replace this URL with a direct link
                 to a properly hosted, 360-degree equirectangular MP4 video that provides appropriate
                 CORS headers (e.g., from Google Cloud Storage or Backblaze B2 with CORS configured).
@@ -82,7 +79,7 @@
                 src="https://ar-0vrbucket.s3.us-east-2.amazonaws.com/Untitled+video+-+Made+with+Clipchamp+(1).mp4"
                 loop="true"
                 muted="true"         <!-- Start muted for better autoplay chances -->
-                playsinline="true"   <!-- Important for iOS -->
+                playsinline="true"   <!-- Important for iOS to play inline -->
                 preload="auto"
                 crossorigin="anonymous"
             ></video>
@@ -106,7 +103,7 @@
             <p class="text-gray-700 text-lg mb-6">
                 Welcome to your immersive journey!
                 <br />
-                Please click the button below to start the video.
+                Please click **"Start Experience"** to begin. If you're on a mobile device and want to use your phone's movement to look around, you may also need to click **"Enable Gyroscope"** to grant permission.
                 <br />
                 <strong class="text-red-600">IMPORTANT: This player requires a direct MP4 link that supports CORS for 360 VR playback. Hosting videos directly on GitHub rarely works for this.</strong>
             </p>
@@ -116,6 +113,13 @@
                     class="button bg-blue-600 hover:bg-blue-700 text-white"
                 >
                     Start Experience
+                </button>
+                <!-- New button to request device orientation permission -->
+                <button
+                    id="enableGyroButton"
+                    class="button bg-purple-600 hover:bg-purple-700 text-white mt-4 sm:mt-0"
+                >
+                    Enable Gyroscope
                 </button>
             </div>
             <p class="text-sm text-gray-500 mt-4">
@@ -138,9 +142,13 @@
         document.addEventListener('DOMContentLoaded', () => {
             const videoElement = document.getElementById('video360');
             const startButton = document.getElementById('startButton');
+            const enableGyroButton = document.getElementById('enableGyroButton'); // New button
             const experienceOverlay = document.getElementById('experienceOverlay');
             const muteToggleButton = document.getElementById('muteToggleButton');
             const muteToggleButtonContainer = document.getElementById('muteToggleButtonContainer');
+            
+            // Flag to track if gyroscope permission has been granted
+            let gyroPermissionGranted = false;
 
             // Function to show a custom message box instead of alert()
             function showCustomMessageBox(message) {
@@ -163,6 +171,12 @@
                     experienceOverlay.classList.add('hidden-overlay'); // Hide the overlay
                     muteToggleButtonContainer.classList.remove('hidden');
                     muteToggleButton.textContent = videoElement.muted ? 'Unmute' : 'Mute';
+                    // After successful play, ensure A-Frame's camera is active
+                    const cameraEl = document.querySelector('a-entity[camera]');
+                    if (cameraEl && cameraEl.components['look-controls']) {
+                        cameraEl.components['look-controls'].play(); // Ensure look-controls are active
+                        console.log('A-Frame look-controls activated.');
+                    }
                 }).catch(error => {
                     console.error("Video autoplay failed:", error);
                     let errorMessage = "Video autoplay blocked by browser. Please unmute or try again.";
@@ -196,8 +210,36 @@
                 }
             }
 
+            // Function to request device orientation permission
+            function requestDeviceOrientationPermission() {
+                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    DeviceOrientationEvent.requestPermission().then(permissionState => {
+                        if (permissionState === 'granted') {
+                            console.log('Device orientation permission granted!');
+                            gyroPermissionGranted = true;
+                            showCustomMessageBox('Gyroscope access granted. You can now move your phone to look around.');
+                            // A-Frame's look-controls will automatically use this if available
+                        } else {
+                            console.warn('Device orientation permission denied.');
+                            showCustomMessageBox('Gyroscope access denied. You will need to drag the screen to look around.');
+                        }
+                    }).catch(error => {
+                        console.error('Error requesting device orientation permission:', error);
+                        showCustomMessageBox('Failed to request gyroscope access. Your device may not support it, or there was an error.');
+                    });
+                } else {
+                    // For older devices or Android (where permission is often implicit)
+                    console.log('DeviceOrientationEvent.requestPermission is not a function or not needed.');
+                    showCustomMessageBox('Your device supports gyroscope without explicit permission, or it is an older device. Try moving your phone around.');
+                }
+            }
+
+
             // Event listener for the "Start Experience" button
             startButton.addEventListener('click', startVideoPlayback);
+
+            // Event listener for the new "Enable Gyroscope" button
+            enableGyroButton.addEventListener('click', requestDeviceOrientationPermission);
 
             // Event listener for the Mute/Unmute button
             muteToggleButton.addEventListener('click', () => {
@@ -220,7 +262,6 @@
 
             videoElement.addEventListener('pause', () => {
                 console.log('Video paused (pause event).');
-                // Optionally show something if video pauses unexpectedly
             });
 
             videoElement.addEventListener('error', (event) => {
