@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Immersive AR/VR Video</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- A-Frame CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+    <style>
+        /* Apply Inter font for better typography */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+        /* Ensure a-scene takes full screen */
+        a-scene {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.75);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10; /* Ensure overlay is on top */
+            transition: opacity 0.5s ease-in-out;
+        }
+        .hidden-overlay {
+            opacity: 0;
+            pointer-events: none; /* Make it unclickable when hidden */
+        }
+        .message-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 28rem; /* Equivalent to max-w-lg */
+            margin: 1rem;
+        }
+        .button {
+            padding: 0.75rem 2rem; /* py-3 px-8 */
+            border-radius: 9999px; /* rounded-full */
+            font-weight: 700; /* font-bold */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-lg */
+            transition: all 0.3s ease-in-out; /* transition duration-300 ease-in-out */
+            transform-origin: center;
+        }
+        .button:hover {
+            transform: scale(1.05); /* transform hover:scale-105 */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- A-Frame Scene -->
+    <a-scene embedded vr-mode-ui="enabled: false">
+        <!-- Asset management: Preload the video -->
+        <a-assets>
+            <!--
+                Example 360 video URL. REPLACE THIS WITH YOUR ACTUAL 360 VIDEO URL.
+                For A-Frame, it's best to use a direct MP4 URL that is 360-formatted (equirectangular).
+            -->
+            <video
+                id="video360"
+                src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
+                loop="true"
+                muted="true"         <!-- Start muted for better autoplay chances -->
+                playsinline="true"   <!-- Important for iOS -->
+                preload="auto"
+                crossorigin="anonymous"
+            ></video>
+        </a-assets>
+
+        <!-- 360 Video Sphere -->
+        <a-videosphere src="#video360" rotation="0 180 0"></a-videosphere>
+
+        <!-- Camera with look-controls for device orientation and mouse drag -->
+        <!-- `look-controls` enables looking around with mouse drag on desktop and device motion on mobile -->
+        <a-entity camera look-controls="pointerLockEnabled: false"></a-entity>
+
+        <!-- Optional: Add a simple sky for background if video isn't loaded -->
+        <a-sky color="#000"></a-sky>
+    </a-scene>
+
+    <!-- Overlay for start button and instructions -->
+    <div id="experienceOverlay" class="overlay">
+        <div class="message-box">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">Immersive VR Experience</h1>
+            <p class="text-gray-700 text-lg mb-6">
+                Welcome to your immersive journey!
+                <br />
+                Please click the button below to start the 360-degree video.
+                <br />
+                <strong class="text-red-600">Important: Replace the placeholder video URL with your own 360 video URL for the full experience!</strong>
+                <br />
+                (Make sure your video is in equirectangular format for 360 playback).
+            </p>
+            <button
+                id="startButton"
+                class="button bg-blue-600 hover:bg-blue-700 text-white"
+            >
+                Start Experience
+            </button>
+            <p class="text-sm text-gray-500 mt-4">
+                Once started, move your phone around or drag your mouse to look around in the video.
+            </p>
+        </div>
+    </div>
+
+    <!-- Mute/Unmute button (initially hidden, shown after start) -->
+    <div id="muteToggleButtonContainer" class="absolute bottom-4 right-4 z-20 hidden">
+        <button
+            id="muteToggleButton"
+            class="bg-gray-800 hover:bg-gray-700 text-white py-2 px-4 rounded-full text-sm opacity-80"
+        >
+            Mute
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoElement = document.getElementById('video360');
+            const startButton = document.getElementById('startButton');
+            const experienceOverlay = document.getElementById('experienceOverlay');
+            const muteToggleButton = document.getElementById('muteToggleButton');
+            const muteToggleButtonContainer = document.getElementById('muteToggleButtonContainer');
+
+            // Function to show a custom message box instead of alert()
+            function showCustomMessageBox(message) {
+                const messageBox = document.createElement('div');
+                messageBox.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50';
+                messageBox.innerHTML = `
+                    <div class="bg-white rounded-xl p-6 shadow-2xl text-center max-w-sm mx-auto">
+                        <p class="text-gray-800 text-lg mb-4">${message}</p>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full" onclick="this.parentNode.parentNode.remove()">OK</button>
+                    </div>
+                `;
+                document.body.appendChild(messageBox);
+            }
+
+            startButton.addEventListener('click', () => {
+                // Attempt to play the video when the start button is clicked
+                videoElement.play().then(() => {
+                    experienceOverlay.classList.add('hidden-overlay'); // Hide the overlay
+                    // Show mute/unmute button after video starts playing
+                    muteToggleButtonContainer.classList.remove('hidden');
+                    muteToggleButton.textContent = videoElement.muted ? 'Unmute' : 'Mute';
+                }).catch(error => {
+                    console.error("Video autoplay failed:", error);
+                    // Use custom message box instead of alert()
+                    showCustomMessageBox("Video autoplay blocked by browser. Please unmute or try again, or check browser permissions.");
+                    // Re-show overlay if autoplay fails
+                    experienceOverlay.classList.remove('hidden-overlay');
+                });
+            });
+
+            muteToggleButton.addEventListener('click', () => {
+                if (videoElement) {
+                    videoElement.muted = !videoElement.muted;
+                    muteToggleButton.textContent = videoElement.muted ? 'Unmute' : 'Mute';
+                }
+            });
+
+            // Handle visibility of mute button if user interacts via A-Frame's UI or VR mode
+            // This is more of a safety for direct video interaction in A-Fra
