@@ -68,13 +68,13 @@
         <!-- Asset management: Preload the video -->
         <a-assets>
             <!--
-                IMPORTANT: REPLACE THIS WITH YOUR ACTUAL DIRECT 360 VIDEO URL from a reliable hosting service.
-                This should be a direct link to an MP4 file (e.g., https://your-domain.com/your-360-video.mp4).
-                The video should be in equirectangular format for proper 360 playback.
+                IMPORTANT: This is a GENERIC MP4 for testing functionality. It is NOT a 360-degree video.
+                For an actual immersive 360 experience, you MUST replace this URL with a direct link
+                to a properly hosted, 360-degree equirectangular MP4 video that provides appropriate CORS headers.
             -->
             <video
                 id="video360"
-                src="https://d2v9y0fe7sdozst.cloudfront.net/video/360/big_buck_bunny_360_VR.mp4"
+                src="http://techslides.com/demos/sample-videos/small.mp4"
                 loop="true"
                 muted="true"         <!-- Start muted for better autoplay chances -->
                 playsinline="true"   <!-- Important for iOS -->
@@ -101,9 +101,9 @@
             <p class="text-gray-700 text-lg mb-6">
                 Welcome to your immersive journey!
                 <br />
-                Please click the button below to start the 360-degree video.
+                Please click the button below to start the video.
                 <br />
-                <strong class="text-red-600">IMPORTANT: Ensure the video URL in the HTML points to a direct 360 MP4 file from a reliable hosting service for playback to work correctly.</strong>
+                <strong class="text-red-600">IMPORTANT: This is a test video. For a full 360 VR experience, replace the video URL with a direct link to your own 360-degree MP4 from a reliable hosting service.</strong>
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
