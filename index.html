@@ -68,13 +68,18 @@
         <!-- Asset management: Preload the video -->
         <a-assets>
             <!--
-                IMPORTANT: This is a GENERIC MP4 for testing functionality. It is NOT a 360-degree video.
+                IMPORTANT: This is a GENERIC MP4 from w3schools.com for testing basic functionality.
+                It is NOT a 360-degree video.
+                If you upload your video to GitHub repo, you can get its "Raw" URL, but it WILL LIKELY
+                NOT WORK for WebGL (A-Frame) due to missing CORS headers from GitHub's raw content server.
+
                 For an actual immersive 360 experience, you MUST replace this URL with a direct link
-                to a properly hosted, 360-degree equirectangular MP4 video that provides appropriate CORS headers.
+                to a properly hosted, 360-degree equirectangular MP4 video that provides appropriate
+                CORS headers (e.g., from Google Cloud Storage or Backblaze B2 with CORS configured).
             -->
             <video
                 id="video360"
-                src="https://streamable.com/xuxm7x"
+                src="https://www.w3schools.com/html/mov_bbb.mp4"
                 loop="true"
                 muted="true"         <!-- Start muted for better autoplay chances -->
                 playsinline="true"   <!-- Important for iOS -->
@@ -103,7 +108,7 @@
                 <br />
                 Please click the button below to start the video.
                 <br />
-                <strong class="text-red-600">IMPORTANT: This is a test video. For a full 360 VR experience, replace the video URL with a direct link to your own 360-degree MP4 from a reliable hosting service.</strong>
+                <strong class="text-red-600">IMPORTANT: This player requires a direct MP4 link that supports CORS for 360 VR playback. Hosting videos directly on GitHub rarely works for this.</strong>
             </p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
