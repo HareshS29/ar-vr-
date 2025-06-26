@@ -150,15 +150,12 @@
                 document.body.appendChild(messageBox);
             }
 
-            // Function to start video playback and hide overlay
-            function startVideoPlayback() {
-                console.log('Attempting to start video playback...');
-                // Explicitly load the video to ensure it's ready
-                videoElement.load();
+            // Function to attempt video playback
+            function attemptVideoPlay() {
+                console.log('Attempting video play...');
                 videoElement.play().then(() => {
                     console.log('Video playback started successfully!');
                     experienceOverlay.classList.add('hidden-overlay'); // Hide the overlay
-                    // Show mute/unmute button after video starts playing
                     muteToggleButtonContainer.classList.remove('hidden');
                     muteToggleButton.textContent = videoElement.muted ? 'Unmute' : 'Mute';
                 }).catch(error => {
@@ -172,16 +169,30 @@
                         errorMessage += " Check browser console for more details.";
                     }
                     showCustomMessageBox(errorMessage);
-                    // Re-show overlay if autoplay fails or hide the button to try again
-                    experienceOverlay.classList.remove('hidden-overlay');
+                    experienceOverlay.classList.remove('hidden-overlay'); // Show overlay again on failure
                 });
             }
 
+            // Function to start video playback, ensuring it's ready
+            function startVideoPlayback() {
+                console.log('Start Experience button clicked. Video readyState:', videoElement.readyState);
+
+                // Check if video is already ready to play (readyState 3 or 4)
+                if (videoElement.readyState >= 3) { // HAVE_FUTURE_DATA or HAVE_ENOUGH_DATA
+                    attemptVideoPlay();
+                } else {
+                    console.log('Video not yet ready. Waiting for "canplay" event...');
+                    // If not ready, wait for the 'canplay' event
+                    videoElement.addEventListener('canplay', () => {
+                        console.log('Video "canplay" event fired. Attempting play...');
+                        attemptVideoPlay();
+                    }, { once: true }); // Use { once: true } to remove the listener after it fires
+                    videoElement.load(); // Ensure load is initiated if not already
+                }
+            }
+
             // Event listener for the "Start Experience" button
-            startButton.addEventListener('click', () => {
-                console.log('Start Experience button clicked.');
-                startVideoPlayback();
-            });
+            startButton.addEventListener('click', startVideoPlayback);
 
             // Event listener for the Mute/Unmute button
             muteToggleButton.addEventListener('click', () => {
@@ -194,7 +205,7 @@
 
             // Listen for video playing state changes (useful if A-Frame starts it, or after a manual play)
             videoElement.addEventListener('playing', () => {
-                console.log('Video is now playing.');
+                console.log('Video is now playing (playing event).');
                 if (!experienceOverlay.classList.contains('hidden-overlay')) {
                     experienceOverlay.classList.add('hidden-overlay');
                 }
@@ -203,14 +214,27 @@
             });
 
             videoElement.addEventListener('pause', () => {
-                console.log('Video paused.');
+                console.log('Video paused (pause event).');
                 // Optionally show something if video pauses unexpectedly
             });
 
             videoElement.addEventListener('error', (event) => {
-                console.error('Video error:', event);
+                console.error('Video error event:', event);
                 showCustomMessageBox(`Video playback error: ${event.message || 'Check console for details.'} This often happens with unsupported video formats or cross-origin restrictions. Please ensure your video URL is correct and the video is hosted reliably.`);
                 experienceOverlay.classList.remove('hidden-overlay'); // Show overlay again on error
+            });
+
+            videoElement.addEventListener('loadedmetadata', () => {
+                console.log('Video metadata loaded.');
+            });
+
+            videoElement.addEventListener('loadeddata', () => {
+                console.log('Video data loaded (first frame available).');
+            });
+
+            videoElement.addEventListener('progress', () => {
+                // This event fires as the browser downloads video data
+                // console.log('Video download progress...');
             });
         });
     </script>
