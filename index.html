@@ -73,7 +73,7 @@
             -->
             <video
                 id="video360"
-                src="https://drive.google.com/file/d/1bLEotdGvu33yDNc1QaWZXbs4fzW8txjZ/view?usp=drive_link"
+                src="https://www.learningcontainer.com/wp-content/uploads/2020/05/sample-mp4-file.mp4"
                 loop="true"
                 muted="true"         <!-- Start muted for better autoplay chances -->
                 playsinline="true"   <!-- Important for iOS -->
@@ -102,16 +102,26 @@
                 <br />
                 Please click the button below to start the 360-degree video.
                 <br />
-                <strong class="text-red-600">Important: Replace the placeholder video URL with your own 360 video URL for the full experience!</strong>
-                <br />
-                (Make sure your video is in equirectangular format for 360 playback).
+                You can also try pasting a **Google Drive shareable link** below, but please note it might not always work directly as A-Frame needs a direct video file URL.
             </p>
-            <button
-                id="startButton"
-                class="button bg-blue-600 hover:bg-blue-700 text-white"
-            >
-                Start Experience
-            </button>
+            <div class="mb-4 w-full">
+                <input type="text" id="googleDriveLinkInput" placeholder="Paste Google Drive Shareable Link"
+                       class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                    id="startButton"
+                    class="button bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                    Start Experience
+                </button>
+                <button
+                    id="loadGoogleDriveButton"
+                    class="button bg-green-600 hover:bg-green-700 text-white"
+                >
+                    Load Google Drive Video
+                </button>
+            </div>
             <p class="text-sm text-gray-500 mt-4">
                 Once started, move your phone around or drag your mouse to look around in the video.
             </p>
@@ -135,6 +145,8 @@
             const experienceOverlay = document.getElementById('experienceOverlay');
             const muteToggleButton = document.getElementById('muteToggleButton');
             const muteToggleButtonContainer = document.getElementById('muteToggleButtonContainer');
+            const googleDriveLinkInput = document.getElementById('googleDriveLinkInput');
+            const loadGoogleDriveButton = document.getElementById('loadGoogleDriveButton');
 
             // Function to show a custom message box instead of alert()
             function showCustomMessageBox(message) {
@@ -149,8 +161,8 @@
                 document.body.appendChild(messageBox);
             }
 
-            startButton.addEventListener('click', () => {
-                // Attempt to play the video when the start button is clicked
+            // Function to start video playback and hide overlay
+            function startVideoPlayback() {
                 videoElement.play().then(() => {
                     experienceOverlay.classList.add('hidden-overlay'); // Hide the overlay
                     // Show mute/unmute button after video starts playing
@@ -158,11 +170,41 @@
                     muteToggleButton.textContent = videoElement.muted ? 'Unmute' : 'Mute';
                 }).catch(error => {
                     console.error("Video autoplay failed:", error);
-                    // Use custom message box instead of alert()
                     showCustomMessageBox("Video autoplay blocked by browser. Please unmute or try again, or check browser permissions.");
-                    // Re-show overlay if autoplay fails
+                    // Re-show overlay if autoplay fails or hide the button to try again
                     experienceOverlay.classList.remove('hidden-overlay');
                 });
+            }
+
+            // Function to convert Google Drive shareable link to a direct download link
+            function getGoogleDriveDirectLink(shareableLink) {
+                // Regex to extract file ID from common Google Drive link formats
+                const idMatch = shareableLink.match(/id=([a-zA-Z0-9_-]+)|file\/d\/([a-zA-Z0-9_-]+)/);
+                if (idMatch && (idMatch[1] || idMatch[2])) {
+                    const fileId = idMatch[1] || idMatch[2];
+                    return `https://docs.google.com/uc?export=download&id=${fileId}`;
+                }
+                return null; // Return null if ID cannot be extracted
+            }
+
+            startButton.addEventListener('click', startVideoPlayback);
+
+            loadGoogleDriveButton.addEventListener('click', () => {
+                const rawLink = googleDriveLinkInput.value.trim();
+                if (rawLink) {
+                    const directLink = getGoogleDriveDirectLink(rawLink);
+                    if (directLink) {
+                        videoElement.src = directLink;
+                        videoElement.load(); // Reload the video element with the new source
+                        showCustomMessageBox("Attempting to load Google Drive video. Please ensure sharing permissions are set to 'Anyone with the link'. Playback might be unreliable.");
+                        // Try to start playback after a short delay to allow video to load
+                        setTimeout(startVideoPlayback, 1000); // 1 second delay
+                    } else {
+                        showCustomMessageBox("Invalid Google Drive link format. Please ensure it's a shareable link.");
+                    }
+                } else {
+                    showCustomMessageBox("Please paste a Google Drive link into the input field.");
+                }
             });
 
             muteToggleButton.addEventListener('click', () => {
@@ -172,5 +214,18 @@
                 }
             });
 
-            // Handle visibility of mute button if user interacts via A-Frame's UI or VR mode
-            // This is more of a safety for direct video interaction in A-Fra
+            videoElement.addEventListener('playing', () => {
+                if (!experienceOverlay.classList.contains('hidden-overlay')) {
+                    experienceOverlay.classList.add('hidden-overlay');
+                }
+                muteToggleButtonContainer.classList.remove('hidden');
+                muteToggleButton.textContent = videoElement.muted ? 'Unmute' : 'Mute';
+            });
+
+            videoElement.addEventListener('pause', () => {
+                // Optionally show something if video pauses unexpectedly
+            });
+        });
+    </script>
+</body>
+</html>
