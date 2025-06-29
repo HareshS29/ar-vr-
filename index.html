@@ -79,14 +79,17 @@
         <!-- Asset management: Define your video here -->
         <a-assets>
             <!--
-                IMPORTANT: Replace 'your-360-video.mp4' with the actual URL to your 360-degree video file.
-                Ensure the video is hosted on a server that allows cross-origin requests if different from your page's domain.
-                You can find royalty-free 360 videos on platforms like Pexels, Pixabay, or Pond5.
-                Autoplay and muted attributes are removed from here as playback will be initiated by user interaction.
+                User's provided 360 video URL.
+                If the video is still frozen or not playing, check:
+                1. The video file format/codec is widely supported by web browsers.
+                2. CORS (Cross-Origin Resource Sharing) headers are correctly configured
+                   on the S3 bucket to allow access from this domain.
+                Refer to your browser's developer console (F12 on desktop) for specific errors.
             -->
             <video id="video360" loop="true" playsinline webkit-playsinline
                    src="https://ar-0vrbucket.s3.us-east-2.amazonaws.com/Untitled+video+-+Made+with+Clipchamp+(1).mp4"
-                   onerror="this.src='https://placehold.co/1280x720/000000/FFFFFF?text=Error:+Video+Failed+to+Load'; console.error('Video load failed. Check URL and CORS policy.');">
+                   onerror="this.src='https://placehold.co/1280x720/000000/FFFFFF?text=Error:+Video+Failed+to+Load';
+                            console.error('Video load failed! Check URL, CORS policy, and browser compatibility. Please open your browser\'s developer console (F12 on desktop) for specific error messages related to media playback.');">
             </video>
         </a-assets>
 
@@ -117,17 +120,16 @@
             // Function to start the video and hide the message box
             const startExperience = async () => {
                 try {
-                    // Attempt to play video. This requires user interaction.
                     console.log('Attempting to play video...');
                     await videoElement.play();
                     console.log('Video started successfully!');
                     messageBox.style.display = 'none'; // Hide message box after successful play
                 } catch (error) {
-                    console.error('Video playback prevented:', error);
+                    console.error('Video playback prevented or failed:', error);
                     // If playback is still prevented, inform the user
                     const errorBox = document.createElement('div');
                     errorBox.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-700 text-white p-4 rounded-lg z-20';
-                    errorBox.textContent = 'Playback failed. Please ensure your browser allows media playback, or try refreshing the page.';
+                    errorBox.textContent = `Playback failed: ${error.message || 'Unknown error'}. Please ensure your browser allows media playback, or check console (F12) for details.`;
                     document.body.appendChild(errorBox);
                     messageBox.style.display = 'none'; // Hide the original message box to show the error
                 }
@@ -140,7 +142,6 @@
             });
 
             // Fallback if loadedmetadata doesn't fire immediately or video is cached
-            // Check if video is already ready enough to attempt showing the start screen
             if (videoElement.readyState >= HTMLMediaElement.HAVE_METADATA) {
                 console.log('Video already has metadata on DOMContentLoaded. Showing start screen.');
                 showStartScreen();
@@ -167,18 +168,19 @@
                             errorMessage = 'Network error during video download.';
                             break;
                         case videoElement.error.MEDIA_ERR_DECODE:
-                            errorMessage = 'Video decoding error. Format might be unsupported.';
+                            errorMessage = 'Video decoding error. Format might be unsupported or corrupted.';
                             break;
                         case videoElement.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
                             errorMessage = 'Video source not supported or found (check URL/CORS).';
                             break;
+                        default:
+                            errorMessage = `Unknown media error code: ${videoElement.error.code}.`;
                     }
                 }
                 console.error('Video error details:', errorMessage);
-                // Display a user-friendly error message
                 const errorBox = document.createElement('div');
                 errorBox.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-700 text-white p-4 rounded-lg z-20';
-                errorBox.textContent = `Error: ${errorMessage} Please check console for more details.`;
+                errorBox.textContent = `Error: ${errorMessage} Please open your browser's developer console (F12 on desktop) for specific error messages.`;
                 document.body.appendChild(errorBox);
                 loadingScreen.classList.add('hidden'); // Hide loading screen even on error
                 messageBox.style.display = 'none'; // Hide message box if error is displayed directly
