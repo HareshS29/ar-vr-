@@ -79,14 +79,14 @@
         <!-- Asset management: Define your video here -->
         <a-assets>
             <!--
-                User's provided 360 video URL.
-                If the video is still frozen or not playing, check:
-                1. The video file format/codec is widely supported by web browsers.
-                2. CORS (Cross-Origin Resource Sharing) headers are correctly configured
-                   on the S3 bucket to allow access from this domain.
-                Refer to your browser's developer console (F12 on desktop) for specific errors.
+                IMPORTANT: Added crossorigin="anonymous" to explicitly handle CORS.
+                This tells the browser to fetch the video anonymously, which is required
+                for A-Frame/WebGL to access its pixel data when hosted on a different domain.
+
+                You *must* configure your S3 bucket's CORS policy using the JSON format provided.
             -->
             <video id="video360" loop="true" playsinline webkit-playsinline
+                   crossorigin="anonymous"
                    src="https://ar-0vrbucket.s3.us-east-2.amazonaws.com/Untitled+video+-+Made+with+Clipchamp+(1).mp4"
                    onerror="this.src='https://placehold.co/1280x720/000000/FFFFFF?text=Error:+Video+Failed+to+Load';
                             console.error('Video load failed! Check URL, CORS policy, and browser compatibility. Please open your browser\'s developer console (F12 on desktop) for specific error messages related to media playback.');">
