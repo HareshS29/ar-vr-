@@ -3,51 +3,270 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDart AR Experience</title>
-    <!-- A-Frame library for VR/AR experiences -->
+    <title>VDart 360 Video Experience</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,400;0,500;0,600;0,700;1,100&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons (e.g., search icon, though not used in this specific AR/VR UI, included for consistency with HR portal) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
+        /* Global Reset */
+        * {
             margin: 0;
-            overflow: hidden; /* Hide scrollbars */
-            font-family: 'Inter', sans-serif;
-            background-color: #1a202c; /* Dark background */
-            color: #e2e8f0; /* Light text */
+            padding: 0;
+            box-sizing: border-box;
         }
-        /* Common styling for control overlays */
+
+        /* Body Styles - Adapted from HR Portal */
+        body {
+            font-family: 'Montserrat', 'Proxima Nova', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-weight: 100;
+            background: #FFFFFF; /* White background */
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+            color: #333; /* Default text color from HR portal */
+            display: block;
+        }
+
+        /* AR/VR Wrapper - Contains the entire experience */
+        #ar-vr-wrapper {
+            position: relative;
+            width: 100%;
+            height: 600px; /* Fixed height for the immersive container */
+            background-color: #1a202c; /* Default background, will be overridden by banner/video */
+            color: #e2e8f0; /* Text color within this section, can be overridden by overlay styles */
+            overflow: hidden;
+            border-radius: 10px;
+            margin: 0 auto;
+            /* No background-image transition here, handled by banner-section */
+        }
+
+        /* BANNER STYLES - Integrated from HR Portal */
+        .banner-section {
+            background-color: #1E3A5F; /* Default solid background, will be overridden by JS for image */
+            background-size: cover; /* Ensure image covers the area */
+            background-position: center; /* Center the background image */
+            background-repeat: no-repeat; /* Prevent image repetition */
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%; /* Fill the ar-vr-wrapper */
+            position: absolute; /* Position within ar-vr-wrapper */
+            top: 0;
+            left: 0;
+            overflow: hidden; /* Keep content within bounds */
+            margin: 0 auto;
+            transition: opacity 0.5s ease-in-out; /* For fading the banner in/out */
+            z-index: 50; /* Below loading screen, above A-Frame scene */
+        }
+        /* Hidden state for banner-section */
+        .banner-section.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* New: Background animation for banner-section */
+        .banner-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(43, 92, 230, 0.15) 0%, transparent 70%);
+            z-index: 1; /* Below plane and text, above background image */
+            animation: pulseGlow 8s infinite alternate ease-in-out;
+            pointer-events: none; /* Allow clicks through */
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 0.15; }
+            50% { transform: scale(1.1); opacity: 0.3; }
+            100% { transform: scale(1); opacity: 0.15; }
+        }
+
+
+        .banner-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden; /* Clip plane animation */
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .plane {
+            position: absolute;
+            left: -180px;
+            top: 50%;
+            transform: translateY(-50%);
+            /* animation handled by JS */
+            z-index: 3;
+        }
+
+        .plane img {
+            width: 160px;
+            height: auto;
+            object-fit: contain;
+        }
+
+        @keyframes flyThrough {
+            0% {
+                left: -180px;
+                transform: translateY(-50%);
+            }
+            100% {
+                left: calc(100% + 80px);
+                transform: translateY(-50%);
+            }
+        }
+
+        .hr-text {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(40px, 10vw, 100px);
+            font-weight: 500;
+            color: white;
+            opacity: 0;
+            /* animation handled by JS */
+            letter-spacing: 8px;
+            z-index: 2;
+            font-family: 'Montserrat', sans-serif;
+            white-space: nowrap;
+        }
+
+        .hr-caption {
+            position: absolute;
+            top: 75%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(16px, 3vw, 28px);
+            font-weight: 100;
+            color: white;
+            opacity: 0;
+            /* animation handled by JS */
+            letter-spacing: 4px;
+            z-index: 2;
+            font-family: 'Montserrat', sans-serif;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        @keyframes revealText {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes revealCaption {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .restart-btn {
+            position: absolute;
+            bottom: 20px; /* Adjusted position to be inside banner-section */
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 16px; /* Slightly larger for usability */
+            border-radius: 8px; /* More rounded */
+            cursor: pointer;
+            font-size: 12px; /* Adjusted font size */
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.3s ease;
+            z-index: 4; /* Above plane */
+        }
+
+        .restart-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(-50%) translateY(-1px);
+        }
+
+        /* Overlay Boxes - Styled like HR portal cards */
         .overlay-box {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background-color: rgba(0, 0, 0, 0.8);
-            padding: 0; /* Padding moved to inner div for banner effect */
-            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9); /* White, slightly transparent */
+            border: 1px solid #b8c5d3;
+            border-radius: 14px;
+            padding: 35px; /* Consistent with HR portal cards */
             text-align: center;
             z-index: 100;
-            display: none; /* Hidden by default */
-            overflow: hidden; /* Ensures rounded corners apply to children */
+            display: none; /* Controlled by JS */
+            opacity: 0; /* For fade transition */
+            transition: opacity 0.5s ease-in-out;
+            max-width: 600px; /* Adjusted max-width for location grid */
+            width: 80%; /* Responsive width */
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); /* Card shadow */
+            color: #333; /* Text color inside overlay */
+            font-family: 'Montserrat', sans-serif; /* Font for overlay text */
+            animation: glowingBorder 3s infinite alternate; /* Apply the new glow effect */
         }
-        .banner {
-            background-color: #1e3a8a; /* Cobalt Blue - Tailwind's bg-blue-900 */
-            color: white;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .content-padding {
-            padding: 1.5rem; /* Apply actual content padding here */
+        .overlay-box.visible {
+            opacity: 1;
+            display: block;
         }
 
+        /* New glowing border animation */
+        @keyframes glowingBorder {
+            0% { box-shadow: 0 0 5px rgba(43, 92, 230, 0.4), 0 4px 14px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 0 15px rgba(43, 92, 230, 0.8), 0 4px 20px rgba(0, 0, 0, 0.4); }
+            100% { box-shadow: 0 0 5px rgba(43, 92, 230, 0.4), 0 4px 14px rgba(0, 0, 0, 0.3); }
+        }
+
+        .overlay-box .banner { /* Header for overlay boxes */
+            background-color: #1E3A5F; /* Dark blue from HR portal */
+            color: white;
+            padding: 1rem;
+            margin: -35px -35px 30px -35px; /* Adjust to fill top of card */
+            border-top-left-radius: 14px;
+            border-top-right-radius: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .overlay-box .banner h2 {
+            font-size: 1.8em; /* Adjusted font size */
+            font-weight: 600;
+            margin: 0;
+        }
+        .overlay-box .content-padding {
+            padding: 0; /* Padding is already on .overlay-box */
+        }
+        .overlay-box p {
+            font-size: 1em;
+            margin-bottom: 1.5em;
+            font-weight: 400; /* Regular weight */
+        }
+
+        /* Loading screen - styled like an overlay box */
         #loading-screen {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: #1E3A5F; /* Match banner background */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -55,224 +274,754 @@
             color: white;
             font-size: 1.5rem;
             z-index: 1000;
+            opacity: 1;
             transition: opacity 0.5s ease-in-out;
+            font-family: 'Montserrat', sans-serif;
         }
         #loading-screen.hidden {
             opacity: 0;
             pointer-events: none;
         }
+        #loading-screen p {
+            font-weight: 400; /* Regular weight */
+        }
+        #loading-screen .animate-spin {
+            border-color: white; /* Spinner color to contrast with dark blue */
+            border-top-color: #2B5CE6; /* Accent color */
+        }
+
+        /* A-Frame scene takes 100% of its parent wrapper */
         a-scene {
-            height: 100vh;
-            width: 100vw;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Error box - styled like an overlay box */
+        .ar-vr-error-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fef2f2; /* Light red background */
+            color: #b91c1c; /* Darker red text */
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            z-index: 1001;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            border: 1px solid #ef4444; /* Red border */
+            font-family: 'Montserrat', sans-serif;
+        }
+        .ar-vr-error-box.visible {
+            opacity: 1;
+        }
+
+        /* General Button Styling (replaces previous Tailwind button classes) */
+        .portal-button {
+            display: inline-block;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border: none;
+            font-family: 'Montserrat', sans-serif;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .portal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        /* Specific Button Colors */
+        .portal-button.blue {
+            background-color: #2B5CE6;
+            color: white;
+        }
+        .portal-button.blue:hover {
+            background-color: #1E3A5F; /* Darker blue on hover */
+        }
+
+        /* Location Buttons - Reintroduced and styled */
+        .location-button {
+            position: relative; /* Needed for pseudo-element */
+            overflow: hidden; /* Needed for pseudo-element */
+            aspect-ratio: 1 / 1; /* Ensures buttons are square */
+            width: 100%; /* Takes full width of its grid cell */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.3rem;
+            font-weight: 600; /* All same font weight */
+            font-family: 'Montserrat', sans-serif; /* All same font family */
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, transform 0.2s ease-out;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Shimmer effect for location buttons */
+        .location-button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%; /* Start off-screen to the left */
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.7s ease-in-out; /* Animation duration */
+            pointer-events: none; /* Allow clicks through */
+            opacity: 0;
+        }
+
+        .location-button:hover::after {
+            left: 100%; /* Move across to the right */
+            opacity: 1;
+        }
+
+        /* Alternating colors: Cobalt Blue and White */
+        .location-button:nth-child(odd) {
+            background-color: #1e3a8a; /* Cobalt Blue */
+            color: white;
+        }
+        .location-button:nth-child(odd):hover {
+            background-color: #2b6cb0; /* Slightly lighter blue for hover */
+            transform: scale(1.02); /* Slight scale up on hover */
+        }
+
+        .location-button:nth-child(even) {
+            background-color: white;
+            color: #1a202c; /* Dark text for white background */
+        }
+        .location-button:nth-child(even):hover {
+            background-color: #f0f0f0; /* Light gray for hover on white */
+            transform: scale(1.02); /* Slight scale up on hover */
+        }
+
+        /* Adjust font sizes within buttons for smaller look - MADE UNIFORM */
+        .location-button .location-name { /* New class for the main text */
+            font-size: 0.8rem; /* Consistent font size for main name */
+            font-weight: 600;
+        }
+        .location-button .location-description { /* New class for the description */
+            font-size: 0.55rem; /* Consistent font size for description */
+            font-weight: 400; /* Lighter weight for description */
+            color: rgba(255, 255, 255, 0.8); /* Lighter color for description on dark buttons */
+        }
+        .location-button:nth-child(even) .location-description {
+            color: #555; /* Darker color for description on light buttons */
+        }
+
+        /* Adjust grid gap for better spacing */
+        #location-buttons-grid {
+            display: grid; /* Ensure grid display is set */
+            grid-template-columns: repeat(4, 1fr); /* Explicitly 4 equal columns */
+            gap: 0.4rem; /* Kept smaller gap for closer buttons */
+            margin-top: 1.5em; /* Space above grid */
+        }
+
+        /* Responsive Adjustments for location grid */
+        @media (max-width: 768px) {
+            #location-buttons-grid {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns on smaller screens */
+                gap: 0.6rem;
+            }
+            .location-button .location-name {
+                font-size: 0.9rem;
+            }
+            .location-button .location-description {
+                font-size: 0.65rem;
+            }
+        }
+        @media (max-width: 480px) {
+            #location-buttons-grid {
+                grid-template-columns: repeat(2, 1fr); /* Still 2 columns on very small screens */
+                gap: 0.5rem;
+            }
+            .location-button {
+                padding: 0.2rem;
+            }
+            .location-button .location-name {
+                font-size: 0.75rem;
+            }
+            .location-button .location-description {
+                font-size: 0.5rem;
+            }
+        }
+
+        /* Animations for content transition */
+        @keyframes zoomOutFade {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0; }
+        }
+
+        @keyframes zoomInFade {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .zoom-out-active {
+            animation: zoomOutFade 0.5s ease-out forwards;
+        }
+
+        .zoom-in-active {
+            animation: zoomInFade 0.5s ease-in forwards;
         }
     </style>
 </head>
 <body>
-    <!-- Loading screen -->
-    <div id="loading-screen" class="flex flex-col items-center justify-center">
-        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
-        <p class="text-xl">Loading immersive experience...</p>
-        <p class="text-sm mt-2 text-gray-400">Please tap to start the video with sound.</p>
-    </div>
-
-    <!-- Message Box for initial user interaction (Home Page) -->
-    <div id="message-box" class="overlay-box">
-        <div class="banner">
-            <h2 class="text-2xl font-bold">Welcome to the VDart AR Experience</h2>
-        </div>
-        <div class="content-padding">
-            <p class="mb-4">
-                Move your phone or drag with your mouse to look around in the 360-degree video.
-                Tap the button below to start the video with sound.
-            </p>
-            <button id="start-button" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out">
-                Start Experience
-            </button>
-        </div>
-    </div>
-
-    <!-- Post-Video Controls -->
-    <div id="post-video-controls" class="overlay-box">
-        <div class="banner">
-            <h2 class="text-2xl font-bold">Thank you for watching.</h2>
-        </div>
-        <div class="content-padding">
-            <div class="flex flex-col space-y-4">
-                <button id="watch-again-button" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out">
-                    Watch Again
-                </button>
-                <button id="exit-home-button" class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md transition duration-300 ease-in-out">
-                    Exit to Home
-                </button>
+    <div id="ar-vr-wrapper">
+        <!-- Banner Section acts as the background for loading/message screens -->
+        <div class="banner-section" id="ar-vr-banner-section">
+            <div class="banner-container">
+                <div class="plane" id="ar-vr-plane">
+                    <img src="https://www.vdart.com/wp-content/uploads/2025/06/Group-2-1.png" alt="Plane Image">
+                </div>
+                
+                <div class="hr-text" id="ar-vr-hr-text">360</div>
+                <div class="hr-caption" id="ar-vr-hr-caption"> Enabling Our Greatest Asset: You.</div>
+                
+                <button class="restart-btn" onclick="restartAnimation()">Replay Animation</button>
             </div>
         </div>
+
+        <!-- Loading Screen -->
+        <div id="loading-screen">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mb-4"></div>
+            <p class="text-xl">Loading immersive experience...</p>
+        </div>
+
+        <!-- Welcome Message Box -->
+        <div id="message-box" class="overlay-box">
+            <div class="banner">
+                <h2 class="text-2xl font-bold" id="message-box-title">Welcome to the VDart 360 Video Experience</h2>
+            </div>
+            <div class="content-padding" id="message-box-content-wrapper">
+                <!-- Initial Welcome Content -->
+                <div id="welcome-content">
+                    <p class="mb-4">
+                        Move your phone or drag with your mouse to look around in the 360-degree video.
+                        Tap the button below to start the silent video.
+                    </p>
+                    <button id="start-button" class="portal-button blue">
+                        Start Experience
+                    </button>
+                </div>
+
+                <!-- Location Selection Content (Initially Hidden) -->
+                <div id="location-selection-content" style="display: none;">
+                    <p class="mb-6 text-lg">Select a location to begin your 360-degree video experience:</p>
+                    <div id="location-buttons-grid">
+                        <button class="location-button" data-location-id="1">
+                            <span class="location-name">Location 1</span>
+                            <span class="location-description">Default Video</span>
+                        </button>
+                        <button class="location-button" data-location-id="2">
+                            <span class="location-name">Location 2</span>
+                            <span class="location-description">Coming Soon</span>
+                        </button>
+                        <button class="location-button" data-location-id="3">
+                            <span class="location-name">Location 3</span>
+                            <span class="location-description">New Experience</span>
+                        </button>
+                        <button class="location-button" data-location-id="4">
+                            <span class="location-name">Location 4</span>
+                            <span class="location-description">Virtual Tour</span>
+                        </button>
+                        <button class="location-button" data-location-id="5">
+                            <span class="location-name">Location 5</span>
+                            <span class="location-description">Explore Here</span>
+                        </button>
+                        <button class="location-button" data-location-id="6">
+                            <span class="location-name">Location 6</span>
+                            <span class="location-description">Future Content</span>
+                        </button>
+                        <button class="location-button" data-location-id="7">
+                            <span class="location-name">Location 7</span>
+                            <span class="location-description">Hidden Gem</span>
+                        </button>
+                        <button class="location-button" data-location-id="8">
+                            <span class="location-name">Location 8</span>
+                            <span class="location-description">Special View</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Post Video Controls Box -->
+        <div id="post-video-controls" class="overlay-box">
+            <div class="banner">
+                <h2 class="text-2xl font-bold">Thank you for watching.</h2>
+            </div>
+            <div class="content-padding">
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <button id="watch-again-button" class="portal-button blue">
+                        Watch Again
+                    </button>
+                    <button id="exit-home-button" class="portal-button blue">
+                        Exit to Home
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- A-Frame Scene -->
+        <a-scene embedded vr-mode-ui="enabled: true" device-orientation-permission-ui="enabled: true">
+            <a-assets>
+                <video id="video360" playsinline webkit-playsinline muted
+                        crossorigin="anonymous"
+                        src="https://ar-0vrbucket.s3.us-east-2.amazonaws.com/Untitled+video+-+Made+with+Clipchamp+(1).mp4"
+                        onerror="this.src='https://placehold.co/1280x720/000000/FFFFFF?text=Error:+Video+Failed+to+Load';
+                                 console.error('Video load failed! Check URL, CORS policy, and browser compatibility. Please open your browser\'s developer console (F12 on desktop) for specific error messages related to media playback.');">
+                </video>
+            </a-assets>
+
+            <a-videosphere src="#video360" rotation="0 180 0" opacity="0"
+                animation__fadein="property: opacity; from: 0; to: 1; dur: 1000; startEvents: playVideo; easing: easeInCubic"
+                animation__fadeout="property: opacity; from: 1; to: 0; dur: 1000; startEvents: endVideo; easing: easeOutCubic">
+            </a-videosphere>
+
+            <a-entity id="camera-rig" camera look-controls="enabled: true" wasd-controls="enabled: false"></a-entity>
+        </a-scene>
     </div>
-
-    <!-- A-Frame Scene -->
-    <a-scene embedded vr-mode-ui="enabled: true" device-orientation-permission-ui="enabled: true">
-        <a-assets>
-            <video id="video360" playsinline webkit-playsinline
-                   crossorigin="anonymous"
-                   src="https://ar-0vrbucket.s3.us-east-2.amazonaws.com/Untitled+video+-+Made+with+Clipchamp+(1).mp4"
-                   onerror="this.src='https://placehold.co/1280x720/000000/FFFFFF?text=Error:+Video+Failed+to+Load';
-                            console.error('Video load failed! Check URL, CORS policy, and browser compatibility. Please open your browser\'s developer console (F12 on desktop) for specific error messages related to media playback.');">
-            </video>
-        </a-assets>
-
-        <!-- Camera with look-controls for device orientation and mouse drag -->
-        <!-- look-controls will be dynamically enabled/disabled by JavaScript -->
-        <a-entity id="camera-rig" camera look-controls="enabled: false" wasd-controls="enabled: false"></a-entity>
-        <a-videosphere src="#video360" rotation="0 180 0"></a-videosphere>
-    </a-scene>
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOMContentLoaded fired.');
             const videoElement = document.getElementById('video360');
+            console.log('Video element found:', videoElement);
             const loadingScreen = document.getElementById('loading-screen');
             const messageBox = document.getElementById('message-box');
+            const messageBoxTitle = document.getElementById('message-box-title');
+            const welcomeContent = document.getElementById('welcome-content');
+            const locationSelectionContent = document.getElementById('location-selection-content');
             const startButton = document.getElementById('start-button');
             const postVideoControls = document.getElementById('post-video-controls');
             const watchAgainButton = document.getElementById('watch-again-button');
             const exitHomeButton = document.getElementById('exit-home-button');
             const scene = document.querySelector('a-scene');
-            const cameraRig = document.getElementById('camera-rig'); // Reference to the camera entity
+            const cameraRig = document.getElementById('camera-rig');
+            const videoSphere = document.querySelector('a-videosphere'); // Get the videosphere
+            const locationButtons = document.querySelectorAll('.location-button'); // Select all location buttons
+
+            // HR Portal Banner Elements
+            const arVrBannerSection = document.getElementById('ar-vr-banner-section');
+            let arVrPlane = document.getElementById('ar-vr-plane'); // Use let as these will be reassigned
+            let arVrHrText = document.getElementById('ar-vr-hr-text');
+            let arVrHrCaption = document.getElementById('ar-vr-hr-caption');
+
+            // IMAGE LINK FOR THE HOME BACKGROUND
+            const homeScreenImageUrl = "https://ar-0vrbucket.s3.us-east-2.amazonaws.com/VDart+Home.png";
+
+            // VIDEO LINKS FOR EVERY LOCATION
+            const videoSources = {
+                1: "https://ar-0vrbucket.s3.us-east-2.amazonaws.com/Untitled+video+-+Made+with+Clipchamp+(1).mp4",
+                2: "https://ar-0vrbucket.s3.us-east-2.amazonaws.com/Video+2+VDart+Office.mp4",
+                3: "https://ar-0vrbucket.s3.us-east-2.amazonaws.com/VID_20240131_171059_00_001.mp4",
+                4: "https://ar-0vrbucket.s3.us-east-2.amazonaws.com/VID_20240131_171059_00_001(1).mp4",
+                5: "https://placehold.co/1280x720/000000/FFFFFF?text=Location+5+Video+Placeholder",
+                6: "https://placehold.co/1280x720/000000/FFFFFF?text=Location+6+Video+Placeholder",
+                7: "https://placehold.co/1280x720/000000/FFFFFF?text=Location+7+Video+Placeholder",
+                8: "https://placehold.co/1280x720/000000/FFFFFF?text=Location+8+Video+Placeholder"
+            };
+
+
+            // Function to restart the plane animation and text reveal
+            window.restartAnimation = () => { // Made global for onclick
+                console.log('Restarting banner animation...');
+                const bannerContainer = arVrBannerSection.querySelector('.banner-container');
+
+                // Clear existing animated elements
+                if (arVrPlane) arVrPlane.remove();
+                if (arVrHrText) arVrHrText.remove();
+                if (arVrHrCaption) arVrHrCaption.remove();
+
+                // Recreate elements
+                const newPlane = document.createElement('div');
+                newPlane.className = 'plane';
+                newPlane.id = 'ar-vr-plane'; // Re-add ID
+                newPlane.innerHTML = '<img src="https://www.vdart.com/wp-content/uploads/2025/06/Group-2-1.png" alt="Plane Image">';
+                
+                const newHrText = document.createElement('div');
+                newHrText.className = 'hr-text';
+                newHrText.id = 'ar-vr-hr-text'; // Re-add ID
+                newHrText.textContent = '360';
+
+                const newHrCaption = document.createElement('div');
+                newHrCaption.className = 'hr-caption';
+                newHrCaption.id = 'ar-vr-hr-caption'; // Re-add ID
+                newHrCaption.textContent = 'Enabling Our Greatest Asset: You.';
+
+                // Append new elements
+                bannerContainer.appendChild(newPlane);
+                bannerContainer.appendChild(newHrText);
+                bannerContainer.appendChild(newHrCaption);
+
+                // Force reflow and apply animations
+                // A small timeout ensures elements are in DOM before animation starts
+                setTimeout(() => {
+                    newPlane.style.animation = 'flyThrough 4s ease-in-out forwards';
+                    newHrText.style.animation = 'revealText 0.5s ease-out 3s forwards';
+                    newHrCaption.style.animation = 'revealCaption 0.5s ease-out 3.5s forwards';
+                }, 50);
+
+                // Update the global references for future use
+                arVrPlane = newPlane;
+                arVrHrText = newHrText;
+                arVrHrCaption = newHrCaption;
+            };
+
+            // Function to remove temporary error messages
+            const removeErrorBoxes = () => {
+                document.querySelectorAll('.ar-vr-error-box').forEach(box => {
+                    box.classList.remove('visible');
+                    setTimeout(() => box.remove(), 300);
+                });
+            };
 
             // --- UI Visibility Control Functions ---
             const showLoadingScreen = () => {
+                console.log('showLoadingScreen called.');
+                removeErrorBoxes();
                 loadingScreen.style.display = 'flex';
                 loadingScreen.classList.remove('hidden');
-                messageBox.style.display = 'none';
-                postVideoControls.style.display = 'none';
-                cameraRig.setAttribute('look-controls', 'enabled', false); // Disable gyro when loading
+                messageBox.classList.remove('visible');
+                postVideoControls.classList.remove('visible');
+                arVrBannerSection.classList.remove('hidden'); // Show the banner
+                
+                // Set background image for the banner section
+                arVrBannerSection.style.backgroundImage = `url('${homeScreenImageUrl}')`;
+                arVrBannerSection.style.backgroundColor = 'transparent'; // Ensure background color doesn't hide image
+
+                // Ensure display none for immediate hiding after transition
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                    postVideoControls.style.display = 'none';
+                }, 500);
+
+                if (cameraRig) {
+                    cameraRig.setAttribute('look-controls', 'enabled', false);
+                }
+                if (videoSphere) videoSphere.setAttribute('opacity', 0); // Hide video sphere
             };
 
             const showMessageBox = () => {
-                loadingScreen.classList.add('hidden');
+                console.log('showMessageBox called.');
+                removeErrorBoxes();
+                loadingScreen.classList.add('hidden'); // Start fading out loading screen
+                
+                // Set background image for the banner section
+                arVrBannerSection.style.backgroundImage = `url('${homeScreenImageUrl}')`;
+                arVrBannerSection.style.backgroundColor = 'transparent'; // Ensure background color doesn't hide image
+                arVrBannerSection.classList.remove('hidden'); // Ensure banner is visible for animation
+
+                // After loading screen fully hidden (0.5s transition), show message box and start banner animations
                 setTimeout(() => {
                     loadingScreen.style.display = 'none';
-                }, 500); // Allow fade-out animation
-                messageBox.style.display = 'block';
-                postVideoControls.style.display = 'none';
-                // Reset video to start when showing message box, in case user exited from middle
-                videoElement.pause();
-                videoElement.currentTime = 0;
-                cameraRig.setAttribute('look-controls', 'enabled', false); // Disable gyro on home page
+                    postVideoControls.style.display = 'none'; // Ensure hidden
+
+                    messageBox.classList.add('visible'); // Fade in message box
+                    messageBox.style.display = 'block'; // Ensure display block for transition
+
+                    // Trigger banner animations *after* message box is visible
+                    restartAnimation(); 
+
+                    // Show welcome content, hide location selection
+                    welcomeContent.style.display = 'block';
+                    locationSelectionContent.style.display = 'none';
+                    messageBoxTitle.textContent = "Welcome to the VDart 360 Video Experience";
+
+
+                    // Reset video to start when showing message box, in case user exited from middle
+                    if (videoElement) {
+                        videoElement.pause();
+                        videoElement.currentTime = 0;
+                    }
+                    if (cameraRig) {
+                        cameraRig.setAttribute('look-controls', 'enabled', false);
+                    }
+                    if (videoSphere) videoSphere.setAttribute('opacity', 0); // Hide video sphere
+                }, 500); // Wait for loading screen to fade out
             };
 
+            const showLocationSelection = () => {
+                console.log('showLocationSelection called.');
+                removeErrorBoxes();
+                messageBoxTitle.textContent = "Choose Your VDart 360 Video Location";
+                welcomeContent.style.display = 'none';
+                locationSelectionContent.style.display = 'block';
+                messageBox.classList.add('visible'); // Ensure message box is visible
+                messageBox.style.display = 'block'; // Ensure display block for transition
+            };
+
+
             const hideAllOverlays = () => {
+                console.log('hideAllOverlays called.');
+                removeErrorBoxes();
                 loadingScreen.classList.add('hidden');
-                loadingScreen.style.display = 'none';
-                messageBox.style.display = 'none';
-                postVideoControls.style.display = 'none';
-                // Gyro will be enabled when video starts playing
+                messageBox.classList.remove('visible');
+                postVideoControls.classList.remove('visible');
+                arVrBannerSection.classList.add('hidden'); // Hide the banner when video plays
+
+                // Remove background image when video plays
+                arVrBannerSection.style.backgroundImage = 'none';
+                arVrBannerSection.style.backgroundColor = '#1E3A5F'; // Revert to solid color if needed, or transparent
+
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                    messageBox.style.display = 'none';
+                    postVideoControls.style.display = 'none';
+                }, 500);
             };
 
             const showPostVideoControls = () => {
-                hideAllOverlays(); // Ensure other overlays are hidden
-                postVideoControls.style.display = 'block';
-                cameraRig.setAttribute('look-controls', 'enabled', false); // Disable gyro on video ended page
+                console.log('showPostVideoControls called.');
+                removeErrorBoxes();
+                hideAllOverlays(); // Ensure other overlays are hidden and their transitions start
+
+                // Wait for video sphere to fade out before showing post controls
+                setTimeout(() => {
+                    postVideoControls.classList.add('visible'); // Start fading in post-video controls
+                    postVideoControls.style.display = 'block'; // Ensure display block for transition
+                    arVrBannerSection.classList.remove('hidden'); // Show the banner again
+
+                    // Set background image for the banner section
+                    arVrBannerSection.style.backgroundImage = `url('${homeScreenImageUrl}')`;
+                    arVrBannerSection.style.backgroundColor = 'transparent'; // Ensure background color doesn't hide image
+                }, 1000); // Match videoSphere fade-out duration
+
+                if (cameraRig) {
+                    cameraRig.setAttribute('look-controls', 'enabled', false);
+                }
+                if (videoSphere) videoSphere.setAttribute('opacity', 0); // Hide video sphere
             };
 
             // --- Event Listeners and Logic ---
 
-            // Initial state: Show loading screen then welcome message
+            // Initial state: Show loading screen
             showLoadingScreen();
 
-            // Video metadata loaded (initial load or after refresh)
-            videoElement.addEventListener('loadedmetadata', () => {
-                console.log('Video metadata loaded. Ready state:', videoElement.readyState);
+            // Delay showing the welcome message box until after the banner animation
+            // The banner animation (revealCaption) takes 4 seconds to complete.
+            // We'll wait slightly longer to ensure a smooth transition.
+            setTimeout(() => {
+                console.log('Delayed showMessageBox triggered after banner animation.');
                 showMessageBox();
-            });
+            }, 4500); // 4.5 seconds (4s for animation + 0.5s buffer)
 
-            // Fallback if loadedmetadata doesn't fire immediately or video is cached
-            if (videoElement.readyState >= HTMLMediaElement.HAVE_METADATA) {
-                console.log('Video already has metadata on DOMContentLoaded. Showing start screen.');
+
+            // Video metadata loaded (initial load or after refresh)
+            if (videoElement) {
+                videoElement.addEventListener('loadedmetadata', () => {
+                    console.log('Video metadata loaded. Ready state:', videoElement.readyState);
+                    // This listener is primarily for error handling or very fast loads.
+                    // The main display of the message box is now controlled by the setTimeout above.
+                    // If the message box is not yet visible, and metadata loads, show it.
+                    if (!messageBox.classList.contains('visible') && !postVideoControls.classList.contains('visible') && loadingScreen.classList.contains('hidden')) {
+                         // This condition ensures it doesn't prematurely show if the animation is still playing
+                         // but acts as a fallback if the main timeout somehow fails or is too long.
+                         // For this specific request, the 4.5s timeout is the primary trigger.
+                         // No direct call here, as the timeout handles it.
+                    }
+                });
+
+                // Fallback if loadedmetadata doesn't fire immediately or video is cached
+                if (videoElement.readyState >= HTMLMediaElement.HAVE_METADATA) {
+                    console.log('Video already has metadata on DOMContentLoaded. Initializing display.');
+                    // Same logic as above, rely on the setTimeout for initial display.
+                }
+
+                // More robust error logging for video element
+                videoElement.addEventListener('error', (e) => {
+                    console.error('Video element error event:', e);
+                    let errorMessage = 'An unknown video error occurred.';
+                    if (videoElement.error) {
+                        switch (videoElement.error.code) {
+                            case videoElement.error.MEDIA_ERR_ABORTED:
+                                errorMessage = 'Video playback aborted.';
+                                break;
+                            case videoElement.error.MEDIA_ERR_NETWORK:
+                                errorMessage = 'Network error during video download.';
+                                break;
+                            case videoElement.error.MEDIA_ERR_DECODE:
+                                errorMessage = 'Video decoding error. Format might be unsupported or corrupted.';
+                                break;
+                            case videoElement.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                                errorMessage = 'Video source not supported or found (check URL/CORS).';
+                                break;
+                            default:
+                                errorMessage = `Unknown media error code: ${videoElement.error.code}.`;
+                        }
+                    }
+                    console.error('Video error details:', errorMessage);
+                    const errorBox = document.createElement('div');
+                    errorBox.className = 'ar-vr-error-box';
+                    errorBox.textContent = `Error: ${errorMessage} Please open your browser's developer console (F12 on desktop) for specific error messages.`;
+                    document.getElementById('ar-vr-wrapper').appendChild(errorBox);
+                    errorBox.classList.add('visible');
+                    showMessageBox();
+                });
+
+                // Video ended event listener
+                videoElement.addEventListener('ended', () => {
+                    console.log('Video finished playing.');
+                    if (videoSphere) videoSphere.emit('endVideo');
+                    showPostVideoControls();
+                });
+            } else {
+                console.error('Video element not found. Check HTML ID.');
                 showMessageBox();
             }
 
             // Start button click handler
-            startButton.addEventListener('click', async () => {
-                try {
-                    hideAllOverlays(); // Hide the message box
-                    cameraRig.setAttribute('look-controls', 'enabled', true); // Enable gyro when video starts
-                    console.log('Attempting to play video...');
-                    await videoElement.play();
-                    console.log('Video started successfully!');
-                } catch (error) {
-                    console.error('Video playback prevented or failed:', error);
-                    const errorBox = document.createElement('div');
-                    errorBox.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-700 text-white p-4 rounded-lg z-20';
-                    errorBox.textContent = `Playback failed: ${error.message || 'Unknown error'}. Please ensure your browser allows media playback, or check console (F12) for details.`;
-                    document.body.appendChild(errorBox);
-                    showMessageBox(); // Show message box again if playback fails
-                }
+            if (startButton) {
+                startButton.addEventListener('click', async () => {
+                    removeErrorBoxes();
+                    
+                    // Start the zoom-out animation on the welcome content
+                    welcomeContent.classList.add('zoom-out-active');
+
+                    // After animation, hide welcome content and show location selection with zoom-in
+                    setTimeout(() => {
+                        welcomeContent.style.display = 'none'; // Hide after animation
+                        welcomeContent.classList.remove('zoom-out-active'); // Clean up class
+
+                        // Prepare location content for zoom-in
+                        locationSelectionContent.style.display = 'block'; // Make visible for animation
+                        messageBoxTitle.textContent = "Choose Your VDart 360 Video Location"; // Update title
+
+                        // Apply zoom-in animation to the location content
+                        locationSelectionContent.classList.add('zoom-in-active');
+
+                        // Clean up zoom-in class after its animation
+                        setTimeout(() => {
+                            locationSelectionContent.classList.remove('zoom-in-active');
+                        }, 500); // Match zoomInFade duration
+
+                    }, 500); // Match zoomOutFade duration
+                });
+            } else {
+                console.error('Start button not found. Check HTML ID.');
+            }
+
+            // Attach event listeners to all location buttons
+            locationButtons.forEach(button => {
+                button.addEventListener('click', async (event) => {
+                    removeErrorBoxes();
+                    const locationId = event.currentTarget.dataset.locationId;
+                    const videoSrc = videoSources[locationId];
+
+                    if (!videoSrc) {
+                        console.error(`No video source found for location ID: ${locationId}`);
+                        const errorBox = document.createElement('div');
+                        errorBox.className = 'ar-vr-error-box';
+                        errorBox.textContent = `Error: Video not available for Location ${locationId}.`;
+                        document.getElementById('ar-vr-wrapper').appendChild(errorBox);
+                        errorBox.classList.add('visible');
+                        return;
+                    }
+
+                    try {
+                        hideAllOverlays();
+                        if (videoSphere) {
+                            videoSphere.setAttribute('opacity', 0); // Ensure starting from 0
+                            videoSphere.setAttribute('visible', true); // Make visible for animation
+                            videoSphere.emit('playVideo'); // Trigger fade-in
+                        }
+                        console.log(`Attempting to play video for Location ${locationId}: ${videoSrc}`);
+                        videoElement.src = videoSrc; // Set the video source
+                        videoElement.load(); // Load the new video source
+                        await videoElement.play();
+                        console.log('Video started successfully!');
+                        if (cameraRig) {
+                            cameraRig.setAttribute('look-controls', 'enabled', true);
+                        }
+                    } catch (error) {
+                        console.error('Video playback prevented or failed:', error);
+                        const errorBox = document.createElement('div');
+                        errorBox.className = 'ar-vr-error-box';
+                        errorBox.textContent = `Playback failed for Location ${locationId}: ${error.message || 'Unknown error'}. Please ensure your browser allows media playback, or check console (F12) for details.`;
+                        document.getElementById('ar-vr-wrapper').appendChild(errorBox);
+                        errorBox.classList.add('visible');
+                        showMessageBox(); // If playback fails, return to home screen
+                    }
+                });
             });
 
-            // Video ended event listener
-            videoElement.addEventListener('ended', () => {
-                console.log('Video finished playing.');
-                showPostVideoControls();
-            });
 
             // Watch Again button click handler
-            watchAgainButton.addEventListener('click', async () => {
-                hideAllOverlays(); // Hide post-video controls
-                videoElement.currentTime = 0; // Rewind video to start
-                try {
-                    cameraRig.setAttribute('look-controls', 'enabled', true); // Enable gyro when video restarts
-                    await videoElement.play();
-                    console.log('Video restarted successfully!');
-                } catch (error) {
-                    console.error('Video restart prevented or failed:', error);
-                    // If restart fails, show the post-video controls again
-                    showPostVideoControls();
-                    const errorBox = document.createElement('div');
-                    errorBox.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-700 text-white p-4 rounded-lg z-20';
-                    errorBox.textContent = `Video restart failed: ${error.message || 'Unknown error'}.`;
-                    document.body.appendChild(errorBox);
-                }
-            });
+            if (watchAgainButton) {
+                watchAgainButton.addEventListener('click', async () => {
+                    removeErrorBoxes();
+                    hideAllOverlays();
+                    if (videoElement) {
+                        videoElement.currentTime = 0;
+                    }
+                    try {
+                        if (videoSphere) {
+                            videoSphere.setAttribute('opacity', 0); // Ensure starting from 0
+                            videoSphere.setAttribute('visible', true); // Make visible for animation
+                            videoSphere.emit('playVideo'); // Trigger fade-in
+                        }
+                        console.log('Attempting to restart video...');
+                        await videoElement.play();
+                        console.log('Video restarted successfully!');
+                        if (cameraRig) {
+                            cameraRig.setAttribute('look-controls', 'enabled', true);
+                        }
+                    } catch (error) {
+                        console.error('Video restart prevented or failed:', error);
+                        showPostVideoControls();
+                        const errorBox = document.createElement('div');
+                        errorBox.className = 'ar-vr-error-box';
+                        errorBox.textContent = `Video restart failed: ${error.message || 'Unknown error'}.`;
+                        document.getElementById('ar-vr-wrapper').appendChild(errorBox);
+                        errorBox.classList.add('visible');
+                    }
+                });
+            } else {
+                console.error('Watch Again button not found. Check HTML ID.');
+            }
 
             // Exit to Home button click handler
-            exitHomeButton.addEventListener('click', () => {
-                console.log('Exiting to home page.');
-                showMessageBox(); // Show the initial welcome message (simulates home page)
-            });
+            if (exitHomeButton) {
+                exitHomeButton.addEventListener('click', () => {
+                    console.log('Exiting to home page.');
+                    showMessageBox(); // Show the initial welcome message (simulates home page)
+                });
+            } else {
+                console.error('Exit Home button not found. Check HTML ID.');
+            }
 
             // A-Frame 'loaded' event for scene readiness
-            scene.addEventListener('loaded', () => {
-                console.log('A-Frame scene loaded.');
-            });
+            if (scene) {
+                scene.addEventListener('loaded', () => {
+                    console.log('A-Frame scene loaded.');
+                });
 
-            // More robust error logging for video element
-            videoElement.addEventListener('error', (e) => {
-                console.error('Video element error event:', e);
-                let errorMessage = 'An unknown video error occurred.';
-                if (videoElement.error) {
-                    switch (videoElement.error.code) {
-                        case videoElement.error.MEDIA_ERR_ABORTED:
-                            errorMessage = 'Video playback aborted.';
-                            break;
-                        case videoElement.error.MEDIA_ERR_NETWORK:
-                            errorMessage = 'Network error during video download.';
-                            break;
-                        case videoElement.error.MEDIA_ERR_DECODE:
-                            errorMessage = 'Video decoding error. Format might be unsupported or corrupted.';
-                            break;
-                        case videoElement.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-                            errorMessage = 'Video source not supported or found (check URL/CORS).';
-                            break;
-                        default:
-                            errorMessage = `Unknown media error code: ${videoElement.error.code}.`;
+                // A-Frame 'enter-vr' event
+                scene.addEventListener('enter-vr', () => {
+                    console.log('Entered VR mode. Ensuring look-controls are enabled.');
+                    if (cameraRig) {
+                        cameraRig.setAttribute('look-controls', 'enabled', true);
                     }
-                }
-                console.error('Video error details:', errorMessage);
-                const errorBox = document.createElement('div');
-                errorBox.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-700 text-white p-4 rounded-lg z-20';
-                errorBox.textContent = `Error: ${errorMessage} Please open your browser's developer console (F12 on desktop) for specific error messages.`;
-                document.body.appendChild(errorBox);
-                showMessageBox(); // Show the welcome message on serious errors
-            });
+                });
+
+                // A-Frame 'exit-vr' event
+                scene.addEventListener('exit-vr', () => {
+                    console.log('Exited VR mode. Disabling look-controls.');
+                    showMessageBox(); // Return to styled home screen
+                });
+            }
         });
     </script>
 </body>
